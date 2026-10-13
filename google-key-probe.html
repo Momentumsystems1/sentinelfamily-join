@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico claves Google — Sentinel</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;margin:24px;background:#0d1117;color:#e6edf3}
+  h1{font-size:20px} .key{font-family:monospace;font-size:12px;color:#8b949e}
+  table{border-collapse:collapse;width:100%;margin-top:12px;font-size:14px}
+  td,th{border:1px solid #30363d;padding:8px;text-align:left}
+  th{background:#161b22}
+  .ok{color:#3fb950;font-weight:600}.ko{color:#f85149;font-weight:600}
+  #status{margin-top:16px;color:#8b949e;font-size:13px}
+</style>
+</head>
+<body>
+<h1>Diagnóstico de claves Google API</h1>
+<div class="key">Probando desde tu dispositivo…</div>
+<table id="t"><tr><th>API</th><th id="k1">Clave A</th><th id="k2">Clave B</th></tr></table>
+<div id="status"></div>
+<script>
+const KEYS=[
+  {label:'A', key:'AIzaSyDVj-1Ci9VwwcCi9kirQK3O00eP8mSAY70'},
+  {label:'B', key:'AIzaSyCpLR28oNC9n9MIUSsxF0OEXlMLqXCicns'}
+];
+document.getElementById('k1').textContent='Clave A …'+KEYS[0].key.slice(-6);
+document.getElementById('k2').textContent='Clave B …'+KEYS[1].key.slice(-6);
+const tests=[
+  ['Geocoding', k=>fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=Madrid&key=${k}`).then(r=>r.json()).then(j=>j.status==='OK'?'OK ('+j.results.length+' resultados)':('FALLO: '+j.status))],
+  ['Directions', k=>fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=Madrid&destination=Toledo&key=${k}`).then(r=>r.json()).then(j=>j.status==='OK'?'OK (ruta encontrada)':('FALLO: '+j.status))],
+  ['Distance Matrix', k=>fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=Madrid&destinations=Toledo&key=${k}`).then(r=>r.json()).then(j=>j.status==='OK'?'OK':('FALLO: '+j.status))],
+  ['Places (legacy)', k=>fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=Madrid&key=${k}`).then(r=>r.json()).then(j=>j.status==='OK'?'OK':('FALLO: '+j.status)).catch(()=>'red bloqueada')],
+  ['Maps JS (tile)', k=>new Promise(res=>{const s=document.createElement('script');const to=setTimeout(()=>res('timeout'),8000);
+     s.src=`https://maps.googleapis.com/maps/api/js?key=${k}&callback=__cb_${k.slice(-6)}`;window[`__cb_${k.slice(-6)}`]=()=>{clearTimeout(to);res('OK (JS cargado)')};
+     s.onerror=()=>{clearTimeout(to);res('FALLO al cargar')};document.head.appendChild(s);})],
+];
+(async()=>{
+  const t=document.getElementById('t');
+  for(const [name,fn] of tests){
+    const row=t.insertRow();row.insertCell().textContent=name;
+    for(const {key} of KEYS){
+      const c=row.insertCell();c.textContent='…';
+      try{const r=await fn(key);c.textContent=r;c.className=r.startsWith('OK')?'ok':'ko';}
+      catch(e){c.textContent='red bloqueada';c.className='ko';}
+    }
+  }
+  document.getElementById('status').textContent='Listo. Envía captura de esta tabla a K300.';
+})();
+</script>
+</body>
+</html>
