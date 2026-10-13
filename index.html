@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invitación a SentinelFamily</title>
+<style>
+  :root { --primary: #1B5E52; --bg: #F4F7F6; --card: #FFFFFF; --text: #1A2B28; --muted: #5E6E6A; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--card); border-radius: 20px; padding: 32px 24px;
+    max-width: 420px; width: 100%; text-align: center;
+    box-shadow: 0 8px 30px rgba(27, 94, 82, 0.12);
+  }
+  .logo {
+    width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 16px;
+    background: var(--primary); color: #fff; font-size: 34px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  p.sub { color: var(--muted); font-size: 15px; line-height: 1.5; margin-bottom: 24px; }
+  .btn {
+    display: block; width: 100%; padding: 15px; border-radius: 12px;
+    background: var(--primary); color: #fff; text-decoration: none;
+    font-size: 16px; font-weight: 600; margin-bottom: 12px; border: none; cursor: pointer;
+  }
+  .btn.secondary { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+  .steps { text-align: left; margin: 20px 0 8px; font-size: 14px; color: var(--muted); }
+  .steps li { margin: 8px 0 8px 18px; }
+  .hidden { display: none; }
+  .token { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 16px; }
+  .error { color: #B3261E; font-size: 14px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">S</div>
+    <h1>Invitación a un círculo</h1>
+    <p class="sub">Alguien de tu familia te invita a compartir ubicación en <strong>SentinelFamily</strong>.</p>
+
+    <div id="with-token">
+      <a class="btn" id="open-app" href="#">Abrir la app y aceptar</a>
+      <div id="no-app" class="hidden">
+        <ol class="steps">
+          <li>Instala <strong>Sentinelfamily</strong> en tu móvil Android (te la envían por WhatsApp o la descargas del enlace que te hayan dado).</li>
+          <li>Crea tu cuenta con tu email.</li>
+          <li>Vuelve a abrir este mismo enlace para unirte al círculo.</li>
+        </ol>
+        <button class="btn secondary" id="retry">Ya tengo la app — reintentar</button>
+      </div>
+    </div>
+
+    <div id="bad-token" class="hidden">
+      <p class="error">Este enlace de invitación no es válido o ha caducado. Pide a tu familiar que genere uno nuevo.</p>
+    </div>
+
+    <div class="token hidden" id="token-debug"></div>
+  </div>
+
+<script>
+(function () {
+  // Extrae el token de /join/<token>, /sentinelfamily-join/join/<token> o ?token=
+  var path = location.pathname;
+  var m = path.match(/\/join\/([A-Za-z0-9-]{10,})/);
+  var token = m ? m[1] : (new URLSearchParams(location.search).get('token') || '');
+  var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  if (!UUID_RE.test(token)) {
+    document.getElementById('with-token').classList.add('hidden');
+    document.getElementById('bad-token').classList.remove('hidden');
+    return;
+  }
+
+  var deeplink = 'sentinelfamily://app/join/' + token;
+  var intent = 'intent://app/join/' + token +
+    '#Intent;scheme=sentinelfamily;package=com.example.sentinelfamily' +
+    ';S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
+
+  var openApp = document.getElementById('open-app');
+  openApp.href = deeplink;
+  openApp.addEventListener('click', function () {
+    // En Chrome Android el intent abre la app si está instalada;
+    // si no, el navegador vuelve a esta página y mostramos instrucciones.
+    setTimeout(function () {
+      document.getElementById('no-app').classList.remove('hidden');
+    }, 1500);
+  });
+
+  document.getElementById('retry').addEventListener('click', function () {
+    location.href = intent;
+  });
+
+  // Intento automático al cargar (solo Android/Chrome lo honra como intent)
+  var isAndroid = /android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    var iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = intent;
+    document.body.appendChild(iframe);
+    setTimeout(function () {
+      document.getElementById('no-app').classList.remove('hidden');
+    }, 1600);
+  }
+})();
+</script>
+</body>
+</html>
