@@ -46,6 +46,7 @@
 
     <div id="with-token">
       <a class="btn" id="open-app" href="#">Abrir la app y aceptar</a>
+      <a class="btn secondary" id="open-web" href="#" target="_blank" rel="noopener">Abrir en versión web (sin instalar nada)</a>
       <div id="no-app" class="hidden">
         <ol class="steps">
           <li>Instala <strong>Sentinelfamily</strong> en tu móvil Android (te la envían por WhatsApp o la descargas del enlace que te hayan dado).</li>
@@ -84,6 +85,7 @@
 
   var openApp = document.getElementById('open-app');
   openApp.href = deeplink;
+  document.getElementById('open-web').href = 'https://momentumsystems1.github.io/sentinelfamily-web/join/' + token;
   openApp.addEventListener('click', function () {
     // En Chrome Android el intent abre la app si está instalada;
     // si no, el navegador vuelve a esta página y mostramos instrucciones.
